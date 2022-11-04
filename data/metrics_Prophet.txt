@@ -1,0 +1,2 @@
+,Model,mse,rmse,MAE
+0,Facebook Prophet,0.04,0.21,0.16

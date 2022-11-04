@@ -1,0 +1,2 @@
+,Model,mse,rmse,MAE
+0,Arima,0.04,0.2,0.17
