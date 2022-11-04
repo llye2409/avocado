@@ -3,3 +3,4 @@ matplotlib
 sklearn
 seaborn
 pmdarima
+prophet
