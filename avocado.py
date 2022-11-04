@@ -1,25 +1,20 @@
-
+import streamlit as st
+import numpy as np
+import pandas as pd
 from matplotlib.pyplot import subplot
-import numpy as np
-import pandas as pd
-from sklearn.preprocessing import StandardScaler
-from sklearn.preprocessing import LabelEncoder
-from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
-from sklearn.model_selection import train_test_split
-from math import sqrt
-import datetime
-import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+from math import sqrt
+import datetime
+from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import ExtraTreesRegressor
 from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import LabelEncoder
 from pmdarima import auto_arima
-from sklearn.ensemble import ExtraTreesRegressor
 import pickle
 from prophet import Prophet
 from prophet.plot import add_changepoints_to_plot, plot_components
-import streamlit as st
 
 
 def convert_month(month):
@@ -145,7 +140,6 @@ def dummies(x,df):
 # convert categorical attribute to numeric type: get_dummies()
 X = dummies('region',X)
 
-from sklearn.preprocessing import StandardScaler
 scaler = StandardScaler()
 X_arr = scaler.fit_transform(X)
 X = pd.DataFrame(X_arr, columns=X.columns)
@@ -154,7 +148,6 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=10, test_
 # create new model with adjustable parameters
 reg_model = ExtraTreesRegressor(n_estimators=120, random_state=0).fit(X_train, y_train)
 
-import pickle
 # Save model
 pkl_filename = 'data/reg_model_avocado.pkl'
 with open(pkl_filename, 'wb') as file:  
