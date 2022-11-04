@@ -2,3 +2,4 @@ streamlit
 matplotlib
 sklearn
 seaborn
+pmdarima
