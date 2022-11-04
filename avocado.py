@@ -1,3 +1,4 @@
+
 import streamlit as st
 import numpy as np
 import pandas as pd
@@ -15,6 +16,7 @@ from pmdarima import auto_arima
 import pickle
 from prophet import Prophet
 from prophet.plot import add_changepoints_to_plot, plot_components
+import os
 
 
 def convert_month(month):
@@ -107,64 +109,72 @@ if uploaded_file is not None:
     df = pd.read_csv(uploaded_file, encoding='latin-1')
 
 # -----------Part 1: Regression----------------
-# Create more date, month columns for analysis
-df_reg = df.copy()
-df_reg['Date'] = pd.to_datetime(df_reg['Date'])
-df_reg['day']=df_reg['Date'].dt.day
-df_reg['month']=df_reg['Date'].dt.month
-df_reg['Season'] = df_reg['month'].apply(lambda x: convert_month(x))
+tap_tin = 'data/'
+flag = True
+for i in os.listdir(tap_tin):
+    if i == 'reg_model_avocado.pkl':
+        flag = False
+        break
+if flag:
+    # Create more date, month columns for analysis
+    df_reg = df.copy()
+    df_reg['Date'] = pd.to_datetime(df_reg['Date'])
+    df_reg['day']=df_reg['Date'].dt.day
+    df_reg['month']=df_reg['Date'].dt.month
+    df_reg['Season'] = df_reg['month'].apply(lambda x: convert_month(x))
 
-# Create new dataframe with best features
-df_new = df_reg[['Total Volume', 'Total Bags', 'type', 'year', 'region', 'day', 'month','Season', 'AveragePrice']]
-df_new = df_new.reset_index(drop=True)
+    # Create new dataframe with best features
+    df_new = df_reg[['Total Volume', 'Total Bags', 'type', 'year', 'region', 'day', 'month','Season', 'AveragePrice']]
+    df_new = df_new.reset_index(drop=True)
 
-X_col = ['Total Volume', 'Total Bags', 'type', 'year', 'region', 'day', 'month','Season']
-X = df_new[X_col]
-y = df_new['AveragePrice']
+    X_col = ['Total Volume', 'Total Bags', 'type', 'year', 'region', 'day', 'month','Season']
+    X = df_new[X_col]
+    y = df_new['AveragePrice']
 
-# categorical data type conversion
-lst_categories = ['type', 'region', 'month', 'Season']
-for col in lst_categories:
-    X[col] = pd.Categorical(X[col])
+    # categorical data type conversion
+    lst_categories = ['type', 'region', 'month', 'Season']
+    for col in lst_categories:
+        X[col] = pd.Categorical(X[col])
 
-# Label Encoder for 'type'
-encoder = LabelEncoder()
-X['type'] = encoder.fit_transform(X['type'])
+    # Label Encoder for 'type'
+    encoder = LabelEncoder()
+    X['type'] = encoder.fit_transform(X['type'])
 
-def dummies(x,df):
-    temp = pd.get_dummies(df[x])
-    df = pd.concat([df, temp], axis = 1)
-    df.drop([x], axis = 1, inplace = True)
-    return df
+    def dummies(x,df):
+        temp = pd.get_dummies(df[x])
+        df = pd.concat([df, temp], axis = 1)
+        df.drop([x], axis = 1, inplace = True)
+        return df
 
-# convert categorical attribute to numeric type: get_dummies()
-X = dummies('region',X)
+    # convert categorical attribute to numeric type: get_dummies()
+    X = dummies('region',X)
 
-scaler = StandardScaler()
-X_arr = scaler.fit_transform(X)
-X = pd.DataFrame(X_arr, columns=X.columns)
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=10, test_size=0.3)
-# create new model with adjustable parameters
-reg_model = ExtraTreesRegressor(n_estimators=120, random_state=0).fit(X_train, y_train)
+    scaler = StandardScaler()
+    X_arr = scaler.fit_transform(X)
+    X = pd.DataFrame(X_arr, columns=X.columns)
 
-# Save model
-pkl_filename = 'data/reg_model_avocado.pkl'
-with open(pkl_filename, 'wb') as file:  
-    pickle.dump(reg_model, file)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=10, test_size=0.3)
+    # create new model with adjustable parameters
+    reg_model = ExtraTreesRegressor(n_estimators=120, random_state=0).fit(X_train, y_train)
 
-y_pred = reg_model.predict(X_test)
-r2 = r2_score(y_pred, y_test)
-mae = mean_squared_error(y_pred, y_test)
+    y_pred = reg_model.predict(X_test)
+    r2 = r2_score(y_pred, y_test)
+    mae = mean_squared_error(y_pred, y_test)
 
-metrics = pd.DataFrame([{
-    'Model': 'ExtraTreesRegressor',
-    'r2_score': r2,
-    'MAE': mae
-}])
-metrics
-metrics.to_csv('data/metrics_res.txt')
+    # Save model
+    pkl_filename = 'data/reg_model_avocado.pkl'
+    with open(pkl_filename, 'wb') as file:  
+        pickle.dump(reg_model, file)
 
+    metrics = pd.DataFrame([{
+        'Model': 'ExtraTreesRegressor',
+        'r2_score': r2,
+        'MAE': mae
+    }])
+    metrics.to_csv('data/metrics_res.txt')
+
+   
 # Load model regression
 pkl_filename = 'data/reg_model_avocado.pkl'
 with open(pkl_filename, 'rb') as file:  
